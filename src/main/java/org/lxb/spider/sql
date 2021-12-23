@@ -1,0 +1,31 @@
+CREATE SCHEMA `house_info` DEFAULT CHARACTER SET utf8mb4 ;
+CREATE TABLE `house_info`.`ershoufang_info` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `houseCode` VARCHAR(45) NOT NULL,
+  `community` VARCHAR(45) NULL COMMENT '\'小区\'',
+  `address` VARCHAR(45) NULL COMMENT '\'地址\'',
+  `houseInfo` VARCHAR(45) NULL COMMENT '\'房屋信息\'',
+  `followInfo` VARCHAR(45) NULL COMMENT '\'关注信息\'',
+  `tag` VARCHAR(45) NULL COMMENT '\'标签\'',
+  `totalPrice` VARCHAR(45) NULL COMMENT '\'总价 万元\'',
+  `unitPrice` VARCHAR(45) NULL COMMENT '\'单价 元/平米\'',
+  `detailInfo` TEXT NULL COMMENT '\'详细信息\'',
+  `updateTime` BIGINT NULL,
+  PRIMARY KEY (`id`, `houseCode`));
+
+
+ALTER TABLE `house_info`.`ershoufang_info`
+CHANGE COLUMN `community` `community` VARCHAR(256) NULL DEFAULT NULL COMMENT '\'小区\'' ,
+CHANGE COLUMN `address` `address` VARCHAR(256) NULL DEFAULT NULL COMMENT '\'地址\'' ,
+CHANGE COLUMN `houseInfo` `houseInfo` VARCHAR(256) NULL DEFAULT NULL COMMENT '\'房屋信息\'' ,
+CHANGE COLUMN `followInfo` `followInfo` VARCHAR(256) NULL DEFAULT NULL COMMENT '\'关注信息\'' ,
+CHANGE COLUMN `tag` `tag` VARCHAR(256) NULL DEFAULT NULL COMMENT '\'标签\'' ;
+
+
+ALTER TABLE `house_info`.`ershoufang_info`
+ADD COLUMN `type` VARCHAR(45) NULL COMMENT '类型，1：普通，2：地铁' AFTER `updateTime`,
+ADD COLUMN `regionOrLine` VARCHAR(45) NULL COMMENT '片区或者地铁' AFTER `type`,
+ADD COLUMN `areaOrSite` VARCHAR(45) NULL COMMENT '区域或者站点' AFTER `regionOrLine`,
+DROP PRIMARY KEY,
+ADD PRIMARY KEY (`id`);
+;
