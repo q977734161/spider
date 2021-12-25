@@ -109,7 +109,7 @@ public class App
                             int finalIndex = index;
                             listInfos.forEach(listInfo -> {
                                 try {
-                                    Thread.sleep(5000);
+                                    Thread.sleep(2000);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -420,6 +420,8 @@ public class App
             int resultCode = resultObj.getInteger("code");
             if (resultCode == 1) {
                 JSONObject data = resultObj.getJSONObject("data");
+                try {
+
                 JSONObject resblockCard = data.getJSONObject("resblockCard");
                 communityInfo.put("小区均价", resblockCard.getString("unitPrice") + "元/㎡");
                 communityInfo.put("建筑年代", resblockCard.getString("buildYear"));
@@ -428,6 +430,9 @@ public class App
                 communityInfo.put("户型总数", resblockCard.getString("frameNum") + "个");
                 communityInfo.put("挂牌房源", resblockCard.getString("sellNum") + "套在售二手房   " +
                         resblockCard.getString("rentNum") + "套出租房源");
+                } catch (Exception e) {
+                    System.err.println("get resblockCard from data error : data => " + data.toJSONString());
+                }
                 communityInfo.put("经纬度", data.getString("resblockPosition"));
             }
             detailInfo.setCommunityInfo(communityInfo);

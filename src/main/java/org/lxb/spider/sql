@@ -29,3 +29,5 @@ ADD COLUMN `areaOrSite` VARCHAR(45) NULL COMMENT '区域或者站点' AFTER `reg
 DROP PRIMARY KEY,
 ADD PRIMARY KEY (`id`);
 ;
+
+update ershoufang_info set `date` = DATE_FORMAT(from_unixtime(updateTime/1000),"%Y-%m-%d"), month = DATE_FORMAT(from_unixtime(updateTime/1000),"%Y-%m")
