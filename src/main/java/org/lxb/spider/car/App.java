@@ -1,4 +1,4 @@
-package org.lxb.spider;
+package org.lxb.spider.car;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -9,11 +9,14 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.TextNode;
 import org.jsoup.select.Elements;
-import org.lxb.spider.entity.*;
-import org.lxb.spider.util.HttpUtil;
-import org.lxb.spider.util.JdbcUtil;
+import org.lxb.spider.car.entity.*;
+import org.lxb.spider.car.util.HttpUtil;
+import org.lxb.spider.car.util.JdbcUtil;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,30 +30,17 @@ import java.util.Map;
 public class App 
 {
     private static String[] CITY = new String[]{"bj"};
-    public static final String REGION_INFO = "region_info";
+    public static final String BRAND_INFO = "brand_info";
     public static final String COMPLETE_REGION = "complete_region_info";
     public static final String COMPLETE_SUBWAY = "complete_subway_info";
     public static final String SUBWAY_INFO = "subway_info";
-    private static String BASE_URL = "https://${city}.lianjia.com";
+    private static String BASE_URL = "https://car.yiche.com";
+    private static String XUANCHEGONGJU_URL = BASE_URL + "/xuanchegongju";
     private static String ERSHOUFANG_URL = "https://${city}.lianjia.com/ershoufang/";
     private static String STAT_BASE_URL = "https://${city}.lianjia.com/ershoufang/housestat";
     public static void main(String[] args ) throws IOException, SQLException, ClassNotFoundException, InterruptedException {
-        if(args.length > 0) {
-            String[] newCity = new String[CITY.length + args.length];
-            int index = 0;
-            for (String name: CITY) {
-                newCity[index] = name;
-                index ++;
-            }
-
-            for (String name: args) {
-                newCity[index] = name;
-                index ++;
-            }
-            CITY = newCity;
-        }
         for (int index = 0; index < CITY.length; index++) {
-            File file = new File(System.getProperty("user.dir") + File.separator + "cache");
+            File file = new File(System.getProperty("user.dir") + File.separator + "car_cache");
             System.out.println("cache file : " + file.getAbsolutePath());
             if (!file.exists()) {
                 file.createNewFile();
@@ -70,43 +60,45 @@ public class App
             } else {
                 cachedInfo = new JSONObject();
             }
-            if (!cachedInfo.containsKey(REGION_INFO) || cachedInfo.getJSONArray(REGION_INFO).size() == 0) {
-                List<RegionInfo> regionInfos = getRegionInfo(ERSHOUFANG_URL.replace("${city}", CITY[index]));
-                for (int i = 0; i < regionInfos.size(); i++) {
-                    List<AreaInfo> areaInfoList = getAreaInfo(BASE_URL.replace("${city}", CITY[index]) + regionInfos.get(i).getHref());
-                    regionInfos.get(i).setAreaInfoList(areaInfoList);
-                }
-                cachedInfo.put(REGION_INFO, JSONArray.parseArray(JSONObject.toJSONString(regionInfos)));
-                File fileBak = new File(System.getProperty("user.dir") + File.separator + "cache_bak");
+            if (!cachedInfo.containsKey(BRAND_INFO) || cachedInfo.getJSONArray(BRAND_INFO).size() == 0) {
+                List<BrandInfo> regionInfos = getBrandInfo(XUANCHEGONGJU_URL);
+                cachedInfo.put(BRAND_INFO, JSONArray.parseArray(JSONObject.toJSONString(regionInfos)));
+                File fileBak = new File(System.getProperty("user.dir") + File.separator + "cache_cache_bak");
                 FileWriter fileWriter = new FileWriter(fileBak);
                 fileWriter.write(cachedInfo.toJSONString());
                 fileWriter.close();
                 file.delete();
                 fileBak.renameTo(file);
             }
+            JSONArray brandInfos = cachedInfo.getJSONArray(BRAND_INFO);
+            if(brandInfos.size() == 0) {
+                System.err.println("brand info is null");
+            } else {
+                for (int brandIndex = 0; brandIndex < brandInfos.size(); brandIndex++) {
+                    JSONObject regionInfo = (JSONObject) brandInfos.get(brandIndex);
+                    String carDetailHref = regionInfo.getString("href");
+                    String carName = regionInfo.getString("brandName");
+                    ListInfo listInfo = getListInfo(BASE_URL + carDetailHref);
+                    if(listInfo.getItem() == null || listInfo.getItem().size() == 0) {
+                        System.out.println(carName + ":" + carDetailHref);
+                        continue;
+                    }
+                    do {
+                        System.out.println(listInfo);
+                        listInfo = getListInfo(BASE_URL + listInfo.getNextPageUrl());
+                    } while (listInfo.hasNext() && listInfo.getItem() != null && listInfo.getItem().size() != 0);
 
-            if (!cachedInfo.containsKey(SUBWAY_INFO) || cachedInfo.getJSONArray(SUBWAY_INFO).size() == 0) {
-                List<SubWayInfo> regionInfos = getSubWayInfo(ERSHOUFANG_URL.replace("${city}", CITY[index]));
-                for (int i = 0; i < regionInfos.size(); i++) {
-                    List<SiteInfo> areaInfoList = getSiteInfo(BASE_URL.replace("${city}", CITY[index]) + regionInfos.get(i).getHref());
-                    regionInfos.get(i).setSiteInfoList(areaInfoList);
                 }
-                cachedInfo.put(SUBWAY_INFO, JSONArray.parseArray(JSONObject.toJSONString(regionInfos)));
-                File fileBak = new File(System.getProperty("user.dir") + File.separator + "cache_bak");
-                FileWriter fileWriter = new FileWriter(fileBak);
-                fileWriter.write(cachedInfo.toJSONString());
-                fileWriter.close();
-                file.delete();
-                fileBak.renameTo(file);
             }
+            /*
 
             // List<ListInfo> listInfos = getInfoFromList("https://bj.lianjia.com/ershoufang/");
-            JSONArray regionInfos = cachedInfo.getJSONArray(REGION_INFO);
-            if(regionInfos.size() == 0) {
-                System.err.println("region info is null");
+            JSONArray brandInfos = cachedInfo.getJSONArray(BRAND_INFO);
+            if(brandInfos.size() == 0) {
+                System.err.println("brand info is null");
             } else {
-                for (int regionIndex = 0; regionIndex < regionInfos.size(); regionIndex++) {
-                    JSONObject regionInfo = (JSONObject) regionInfos.get(regionIndex);
+                for (int regionIndex = 0; regionIndex < brandInfos.size(); regionIndex++) {
+                    JSONObject regionInfo = (JSONObject) brandInfos.get(regionIndex);
                     String regionName = regionInfo.getString("regionName");
                     JSONArray areaInfos = regionInfo.getJSONArray("areaInfoList");
                     for (int areaIndenx = 0; areaIndenx < areaInfos.size();areaIndenx ++) {
@@ -138,7 +130,7 @@ public class App
                                 System.out.println("获取详细数据结束 ：" + detailUrl);
                             });
                             System.out.println("开始将数据插入数据库");
-                            JdbcUtil.insert(CITY[index],"1",regionName,areaName,listInfos);
+                            JdbcUtil.insert("1",regionName,areaName,listInfos);
                             System.out.println("完成数据插入数据库");
                             completeRegion.put(href,i);
                             cachedInfo.put(COMPLETE_REGION,completeRegion);
@@ -151,62 +143,31 @@ public class App
                         }
                     }
                 }
-            }
-            JSONArray subwayInfos = cachedInfo.getJSONArray(SUBWAY_INFO);
-            if(subwayInfos.size() == 0) {
-                System.err.println("subway info is null");
-            } else {
-                for (int subwayIndex = 0; subwayIndex < subwayInfos.size(); subwayIndex++) {
-                    JSONObject subwayInfo = (JSONObject) subwayInfos.get(subwayIndex);
-                    String lineName = subwayInfo.getString("lineName");
-                    JSONArray siteInfoList = subwayInfo.getJSONArray("siteInfoList");
-                    for (int areaIndenx = 0; areaIndenx < siteInfoList.size();areaIndenx ++) {
-                        String href = ((JSONObject)siteInfoList.get(areaIndenx)).getString("href");
-                        int totalPage = getTotalPageInfo(BASE_URL.replace("${city}", CITY[index]) + href);//"https://bj.lianjia.com/ershoufang/");
-                        String siteName =  ((JSONObject)siteInfoList.get(areaIndenx)).getString("siteName");
-                        JSONObject completeRegion = cachedInfo.getJSONObject(COMPLETE_SUBWAY);
-                        int currentPage = completeRegion != null && completeRegion.containsKey(href)?(completeRegion.getInteger(href)+1):1;
-                        for (int i = currentPage; i <= totalPage; i++) {
-                            Thread.sleep(5000);
-                            String url = BASE_URL.replace("${city}", CITY[index]) + href + "pg" + i;
-                            System.out.println("获取分页数据：" + url);
-                            List<ListInfo> listInfos = getInfoFromList(url);
-                            int finalIndex1 = index;
-                            listInfos.forEach(listInfo -> {
-                                try {
-                                    Thread.sleep(5000);
-                                } catch (InterruptedException e) {
-                                    e.printStackTrace();
-                                }
-                                String detailUrl = listInfo.getDetailUrl();
-                                System.out.println("开始获取详细数据 ：" + detailUrl);
-                                try {
-                                    DetailInfo detailInfo = getDetailInfo(detailUrl, finalIndex1);
-                                    listInfo.setDetailInfo(JSONObject.toJSONString(detailInfo));
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                                System.out.println("获取详细数据结束 ：" + detailUrl);
-                            });
-                            System.out.println("开始将数据插入数据库");
-                            JdbcUtil.insert(CITY[index],"2",lineName,siteName,listInfos);
-                            System.out.println("完成数据插入数据库");
-                            completeRegion.put(href,i);
-                            cachedInfo.put(COMPLETE_SUBWAY,completeRegion);
-                            File fileBak = new File(System.getProperty("user.dir") + File.separator + "cache_bak");
-                            FileWriter fileWriter = new FileWriter(fileBak);
-                            fileWriter.write(cachedInfo.toJSONString());
-                            fileWriter.close();
-                            file.delete();
-                            fileBak.renameTo(file);
-                        }
-                    }
-                }
-            }
-
+            }*/
         }
         HttpUtil.close();
         JdbcUtil.close();
+    }
+
+    private static ListInfo getListInfo(String carDetailHref) throws IOException {
+        Document document = Jsoup.connect(carDetailHref)
+                .userAgent("Mozilla")
+                .timeout(30000)
+                .get();
+        Elements regionInfo = document.select("div.search-result-list").select("div.search-result-list-item");
+        boolean hasNext = document.select("div[id='pagination-list']").select("a[data-current='next']").hasClass("disabled");
+        String nextUrl = document.select("div[id='pagination-list']").select("a[data-current='next']").attr("href");
+        ListInfo listInfo = new ListInfo(nextUrl,!hasNext);
+        listInfo.setItem(new ArrayList<>());
+        regionInfo.forEach(element -> {
+            String dataId = element.attr("data-id");
+            String name = element.select("a[target='_blank']").select("p.cx-name").text();
+            String price = element.select("a[target='_blank']").select("p.cx-price").text();
+            String peizhiDetailHref = element.select("p.cx-params").select("a.cx-params-font").attr("href");
+            ListInfo.Item item = new ListInfo.Item(dataId,name,price,peizhiDetailHref);
+            listInfo.addItem(item);
+        });
+        return listInfo;
     }
 
     private static  List<RegionInfo>  getRegionInfo(String url) throws IOException {
@@ -225,19 +186,23 @@ public class App
         return list;
     }
 
-    private static  List<AreaInfo>  getAreaInfo(String url) throws IOException {
+    private static  List<BrandInfo> getBrandInfo(String url) throws IOException {
         Document document = Jsoup.connect(url)
                 .userAgent("Mozilla")
                 .timeout(30000)
                 .get();
-        Elements regionInfo = document.select("div.position").select("div[data-role='ershoufang'] > div");
-        List<AreaInfo> list = new ArrayList<>();
-        if(regionInfo.size() > 1) {
-            regionInfo.get(1).select("a").forEach(element -> {
-                String href = element.attr("href");
-                String areName = element.text();
-                AreaInfo areaInfo = new AreaInfo(href, areName);
-                list.add(areaInfo);
+        Elements brandInfo = document.select("div.brand-list > div");
+        List<BrandInfo> list = new ArrayList<>();
+        if(brandInfo.size() > 1) {
+            brandInfo.forEach(element -> {
+                String itemLetter = element.attr("data-index");
+                element.select("div.item-brand").forEach(childElement -> {
+                    String brandId = childElement.attr("data-id");
+                    String brandName = childElement.attr("data-name");
+                    String href = childElement.select("a").attr("href");
+                    BrandInfo brandInfoEntity = new BrandInfo(itemLetter,brandId,brandName,href);
+                    list.add(brandInfoEntity);
+                });
             });
         }
         return list;
@@ -294,45 +259,8 @@ public class App
 
     }
 
-    public static List<ListInfo> getInfoFromList(String url) throws IOException {
-        Document document = Jsoup.connect(url)
-                .userAgent("Mozilla")
-                .timeout(3000)
-                .get();
 
-        Elements elements = document.select("div.info");
-
-        List<ListInfo> listInfos = new ArrayList<>();
-        elements.forEach(element -> {
-            String community = element.select("div.title").select("a").html();
-            String detailUrl = element.select("div.title").select("a[href]").attr("href");
-            String houseCode = element.select("div.title").select("a[href]").attr("data-housecode");
-            Elements elementAddress = element.select("div.flood").select("div.positionInfo").select("a");
-            StringBuffer addressBuffer = new StringBuffer();
-            elementAddress.forEach(element1 -> addressBuffer.append(element1.html()).append("-"));
-            String address = addressBuffer.substring(0,addressBuffer.length()-1);
-            String houseInfo = element.select("div.address").select("div.houseInfo").text();
-            String followInfo = element.select("div.followInfo").text();
-            Elements elementTag = element.select("div.tag").select("span");
-            StringBuffer tagBuffer = new StringBuffer();
-            elementTag.forEach(element12 -> tagBuffer.append(element12.html()).append("-"));
-            String tag = "";
-            if(tagBuffer.length() > 1) {
-                tag = tagBuffer.substring(0, tagBuffer.length() - 1);
-            } else {
-                tag = "-";
-            }
-            String totalPrice = element.select("div.priceInfo").select("div.totalPrice").select("span").html();
-            String unitPrice = element.select("div.priceInfo").select("div.unitPrice").select("span").html();
-
-            ListInfo listInfo = new ListInfo(houseCode,community,detailUrl,
-                    address,houseInfo,followInfo,tag,totalPrice,unitPrice);
-            listInfos.add(listInfo);
-        });
-        return listInfos;
-    }
-
-    private static DetailInfo getDetailInfo(String url,int cityIndex) throws IOException {
+    private static DetailInfo getDetailInfo(String url, int cityIndex) throws IOException {
         Document document = Jsoup.connect(url)
                 .userAgent("Mozilla")
                 .timeout(30000)

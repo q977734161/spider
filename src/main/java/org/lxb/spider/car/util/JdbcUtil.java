@@ -1,9 +1,12 @@
-package org.lxb.spider.util;
+package org.lxb.spider.car.util;
 
-import org.lxb.spider.entity.ListInfo;
+import org.lxb.spider.car.entity.ListInfo;
 
 import java.io.IOException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 public class JdbcUtil {
@@ -12,8 +15,8 @@ public class JdbcUtil {
     private static String USER_NAME = "root";
     private static String PASSWD = "511e1eb8939cde61";
     private static volatile Connection conn;
-    private static String INSERT_SQL = "INSERT INTO `house_info`.`ershoufang_info`(`type`,`regionOrLine`,`areaOrSite`,`houseCode`,`title`,`address`,`houseInfo`,`followInfo`,`tag`,`totalPrice`,`unitPrice`,`detailInfo`,`updateTime`,`city`)\n" +
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+    private static String INSERT_SQL = "INSERT INTO `house_info`.`ershoufang_info`(`type`,`regionOrLine`,`areaOrSite`,`houseCode`,`title`,`address`,`houseInfo`,`followInfo`,`tag`,`totalPrice`,`unitPrice`,`detailInfo`,`updateTime`)\n" +
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);";
     private static Connection getConn() throws ClassNotFoundException, SQLException {
         if(conn == null) {
             synchronized (JdbcUtil.class) {
@@ -26,14 +29,14 @@ public class JdbcUtil {
         return conn;
     }
 
-    public static void insert(String city,String type,String regionOrLine,String areaOrSite,List<ListInfo> listInfos) throws ClassNotFoundException, SQLException {
+    public static void insert(String type,String regionOrLine,String areaOrSite,List<ListInfo> listInfos) throws ClassNotFoundException, SQLException {
 
         PreparedStatement stmt = getConn().prepareStatement(INSERT_SQL);
         for (int i = 0; i < listInfos.size(); i++) {
             stmt.setString(1,type);
             stmt.setString(2,regionOrLine);
             stmt.setString(3,areaOrSite);
-            stmt.setString(4,listInfos.get(i).getHouseId());
+            /*stmt.setString(4,listInfos.get(i).getHouseId());
             stmt.setString(5,listInfos.get(i).getCommunity());
             stmt.setString(6,listInfos.get(i).getAddress());
             stmt.setString(7,listInfos.get(i).getHouseInfo());
@@ -41,9 +44,8 @@ public class JdbcUtil {
             stmt.setString(9,listInfos.get(i).getTag());
             stmt.setString(10,listInfos.get(i).getTotalPrice());
             stmt.setString(11,listInfos.get(i).getUnitPrice());
-            stmt.setString(12,listInfos.get(i).getDetailInfo());
+            stmt.setString(12,listInfos.get(i).getDetailInfo());*/
             stmt.setLong(13,System.currentTimeMillis());
-            stmt.setString(14,city);
             stmt.addBatch();
         };
         int[] rs = stmt.executeBatch();
@@ -56,8 +58,12 @@ public class JdbcUtil {
     }
 
     public static void close() throws IOException, SQLException, ClassNotFoundException {
-        if(getConn() != null) {
-            getConn().close();
+        try {
+            if (getConn() != null) {
+                getConn().close();
+            }
+        }catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
