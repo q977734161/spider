@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public class App 
 {
-    private static String[] CITY = new String[]{"bj"};
+    private static String[] CITY = new String[]{"sh"};
     public static final String REGION_INFO = "region_info";
     public static final String COMPLETE_REGION = "complete_region_info";
     public static final String COMPLETE_SUBWAY = "complete_subway_info";
@@ -50,7 +50,7 @@ public class App
             CITY = newCity;
         }
         for (int index = 0; index < CITY.length; index++) {
-            File file = new File(System.getProperty("user.dir") + File.separator + "cache");
+            File file = new File(System.getProperty("user.dir") + File.separator + CITY[index] +"_cache");
             System.out.println("cache file : " + file.getAbsolutePath());
             if (!file.exists()) {
                 file.createNewFile();
@@ -115,6 +115,9 @@ public class App
                         String areaName =  ((JSONObject)areaInfos.get(areaIndenx)).getString("areaName");
                         JSONObject completeRegion = cachedInfo.getJSONObject(COMPLETE_REGION);
                         int currentPage = completeRegion != null && completeRegion.containsKey(href)?(completeRegion.getInteger(href) + 1):1;
+                        if(completeRegion == null) {
+                            completeRegion = new JSONObject();
+                        }
                         for (int i = currentPage; i <= totalPage; i++) {
                             Thread.sleep(5000);
                             String url = BASE_URL.replace("${city}", CITY[index]) + href + "pg" + i;

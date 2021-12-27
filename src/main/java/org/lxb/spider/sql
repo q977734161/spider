@@ -26,6 +26,7 @@ ALTER TABLE `house_info`.`ershoufang_info`
 ADD COLUMN `type` VARCHAR(45) NULL COMMENT '类型，1：普通，2：地铁' AFTER `updateTime`,
 ADD COLUMN `regionOrLine` VARCHAR(45) NULL COMMENT '片区或者地铁' AFTER `type`,
 ADD COLUMN `areaOrSite` VARCHAR(45) NULL COMMENT '区域或者站点' AFTER `regionOrLine`,
+ADD COLUMN `city` VARCHAR(45) NULL COMMENT '城市' AFTER `areaOrSite`,
 DROP PRIMARY KEY,
 ADD PRIMARY KEY (`id`);
 ;

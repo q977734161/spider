@@ -8,7 +8,7 @@ import java.util.List;
 
 public class JdbcUtil {
 
-    private static String URL = "jdbc:mysql://localhost:3306/house_info?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false";
+    private static String URL = "jdbc:mysql://localhost:3306/house_info?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false&characterEncoding=utf-8";
     private static String USER_NAME = "root";
     private static String PASSWD = "511e1eb8939cde61";
     private static volatile Connection conn;
