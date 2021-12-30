@@ -70,3 +70,7 @@ ADD COLUMN `dataCkid` VARCHAR(20) NULL DEFAULT NULL AFTER `assistDriveInfo`,
 ADD COLUMN `brandId` VARCHAR(10) NULL DEFAULT NULL AFTER `dataCkid`;
 ALTER TABLE `house_info`.`car_info`
 CHANGE COLUMN `carStyleInfo` `carStyleInfo` VARCHAR(100) NULL DEFAULT NULL COMMENT '车具体配置名称' ;
+
+ALTER TABLE `house_info`.`car_info`
+ADD COLUMN `updateTime` BIGINT NULL AFTER `brandId`;
+

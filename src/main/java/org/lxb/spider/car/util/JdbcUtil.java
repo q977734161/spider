@@ -15,14 +15,14 @@ public class JdbcUtil {
 
     private static String URL = "jdbc:mysql://localhost:3306/house_info?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false";
     private static String USER_NAME = "root";
-    private static String PASSWD = "lxb123$%^";
+    private static String PASSWD = "511e1eb8939cde61";
     private static volatile Connection conn;
     private static String INSERT_SQL = "INSERT INTO `house_info`.`car_info`(`city`,`brandName`,`letter`,`carName`,`carStyleInfo`,`carPrice`," +
             "`baseInfo`,`carBodyInfo`,`engineInfo`,`gearboxInfo`,`chassisSteeringInfo`,`wheelBrakeInfo`,`activeSafetyInfo`,`passiveSafetyInfo`," +
             "`assistOperateInfo`,`assistDriveHardWareInfo`,`outConfigInfo`,`innerConfigInfo`,`siteConfigInfo`,`internetOfVehiclesInfo`, " +
             "`videoEntertainmentInfo`,`lightFuncInfo`,`grassRearviewMirrorInfo`,`airConditionInfo`,`optionalInfo`,`assistDriveInfo`, "+
-            "`brandId`,`dataCkid`)VALUES"+
-            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
+            "`brandId`,`dataCkid`,`updateTime`)VALUES"+
+            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
     private static Connection getConn() throws ClassNotFoundException, SQLException {
         if(conn == null) {
             synchronized (JdbcUtil.class) {
@@ -67,6 +67,7 @@ public class JdbcUtil {
             stmt.setString(26,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getAssistDriveInfo()));
             stmt.setString(27,carInfo.getBrandId());
             stmt.setString(28,carTypeDetailInfo.getDataCkid());
+            stmt.setLong(29,System.currentTimeMillis());
             stmt.addBatch();
         }
         int[] rs = stmt.executeBatch();

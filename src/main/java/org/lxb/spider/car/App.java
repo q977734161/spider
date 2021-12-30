@@ -170,7 +170,7 @@ public class App
         return list;
     }
 
-    private static void getDetailInfoAndSave(String html,String brandName,String letter,String brandId) throws SQLException, ClassNotFoundException {
+    public static void getDetailInfoAndSave(String html,String brandName,String letter,String brandId) throws SQLException, ClassNotFoundException {
         CarInfo carInfo = new CarInfo();
         carInfo.setBrandName(brandName);
         carInfo.setLetter(letter);
@@ -190,6 +190,9 @@ public class App
             String carPrice = tdElem.select("div.car-price").text();
             String dataCkid = tdElem.select("div.change-car-btn").attr("data-ckid");
             CarTypeDetailInfo carTypeDetailInfo = new CarTypeDetailInfo();
+            if(StringUtils.isBlank(carName) && StringUtils.isBlank(carStyleInfo)) {
+                return;
+            }
             carTypeDetailInfo.setIndex(index[0]);
             carTypeDetailInfo.setCarName(carName);
             carTypeDetailInfo.setCarPrice(carPrice);
@@ -204,6 +207,9 @@ public class App
             String txt = element.text();
             Elements trElements = document.select("tr[id='"+dataId+"']");
             Element trElement = trElements.first();
+            if(trElement == null) {
+                return;
+            }
             Element nextTrElement = trElement.nextElementSibling();
             final AtomicReference<Boolean> hasNoCloneClass = new AtomicReference<>(false);
             final AtomicReference<String> noCloneClassTrContent = new AtomicReference<>("");
@@ -393,6 +399,9 @@ public class App
     }
 
     private static String getContent(StringBuffer stringBuffer) {
+        if(stringBuffer.length() == 0) {
+            return "";
+        }
         if(stringBuffer.charAt(stringBuffer.length() -1) == '&') {
             return stringBuffer.substring(0,stringBuffer.length()-1);
         }
