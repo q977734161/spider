@@ -105,7 +105,7 @@ public class App
                                 System.err.println("running js job :" + executJobNums);
                             }
                             page.cleanUp();
-                            getDetailInfoAndSave(page.asXml(),carName,itemLetter,brandId);
+                            getDetailInfoAndSave(page.asXml(),carName,item.getBrandName(),itemLetter,brandId);
                             completeInfo.put(url,"1");
                             cachedInfo.put(COMPLETE_INFO, completeInfo);
                             File fileBak = new File(System.getProperty("user.dir") + File.separator + "car_cache_bak");
@@ -169,10 +169,11 @@ public class App
         return list;
     }
 
-    public static void getDetailInfoAndSave(String html,String brandName,String letter,String brandId) throws SQLException, ClassNotFoundException {
+    public static void getDetailInfoAndSave(String html,String brandName,String carName,String letter,String brandId) throws SQLException, ClassNotFoundException {
         CarInfo carInfo = new CarInfo();
         carInfo.setBrandName(brandName);
         carInfo.setLetter(letter);
+        carInfo.setCarName(carName);
         carInfo.setBrandId(brandId);
         carInfo.setCarTypeDetailInfos(new ArrayList<>());
         Document document = Jsoup.parse(html);
@@ -184,16 +185,16 @@ public class App
             if(tdIndex.equals("0")) {
                 return;
             }
-            String carName = tdElem.select("em.car-name").text();
+            String carNameInner = tdElem.select("em.car-name").text();
             String carStyleInfo = tdElem.select("span.car-style-info").text();
             String carPrice = tdElem.select("div.car-price").text();
             String dataCkid = tdElem.select("div.change-car-btn").attr("data-ckid");
             CarTypeDetailInfo carTypeDetailInfo = new CarTypeDetailInfo();
-            if(StringUtils.isBlank(carName) && StringUtils.isBlank(carStyleInfo)) {
+            if(StringUtils.isBlank(carNameInner) && StringUtils.isBlank(carStyleInfo)) {
                 return;
             }
             carTypeDetailInfo.setIndex(index[0]);
-            carTypeDetailInfo.setCarName(carName);
+            carTypeDetailInfo.setCarName(carNameInner);
             carTypeDetailInfo.setCarPrice(carPrice);
             carTypeDetailInfo.setCarStyleInfo(carStyleInfo);
             carTypeDetailInfo.setDataCkid(dataCkid);

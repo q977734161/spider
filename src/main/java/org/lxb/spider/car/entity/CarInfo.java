@@ -4,9 +4,18 @@ import java.util.List;
 
 public class CarInfo {
     private String brandId;
+    private String carName;
     private String brandName;
     private String letter;
     private List<CarTypeDetailInfo> carTypeDetailInfos;
+
+    public String getCarName() {
+        return carName;
+    }
+
+    public void setCarName(String carName) {
+        this.carName = carName;
+    }
 
     public String getBrandId() {
         return brandId;

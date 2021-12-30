@@ -75,7 +75,7 @@ public class AppTest
             System.err.println(executJobNums);
         }
         page.cleanUp();
-        app.getDetailInfoAndSave(page.asXml(),"carName","itemLetter","brandId");
+        app.getDetailInfoAndSave(page.asXml(),"carName","","itemLetter","brandId");
 
     }
 }

@@ -74,7 +74,7 @@ public class JdbcUtil {
             stmt.setString(1,city);
             stmt.setString(2,carInfo.getBrandName());
             stmt.setString(3,carInfo.getLetter());
-            stmt.setString(4,"");
+            stmt.setString(4,carInfo.getCarName());
             stmt.setString(5,"");
             stmt.setString(6,"");
             stmt.setString(7,JSONObject.toJSONString(new JSONObject()));
