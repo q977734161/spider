@@ -54,7 +54,7 @@ public class AppTest
     }
 
     @Test
-    public void testGetInfoFromList() throws IOException {
-        App.getInfoFromList("https://bj.lianjia.com/ershoufang/anzhen1/pg14/");
+    public void testGetInfoFromList() throws IOException, InterruptedException {
+        App.getTotalPageInfo("https://sh.lianjia.com/ershoufang/yangpu/");
     }
 }

@@ -10,6 +10,8 @@ import org.apache.http.util.EntityUtils;
 import org.jsoup.internal.StringUtil;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ public class HttpUtil {
                             .setConnectionRequestTimeout(30000)
                             .setStaleConnectionCheckEnabled(true)
                             .build();
+
                     client = HttpClients.custom()
                             .setDefaultRequestConfig(defaultRequestConfig)
                             .build();

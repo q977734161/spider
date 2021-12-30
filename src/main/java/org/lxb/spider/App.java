@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public class App 
 {
-    private static String[] CITY = new String[]{"sh"};
+    private static String[] CITY = new String[]{};
     public static final String REGION_INFO = "region_info";
     public static final String COMPLETE_REGION = "complete_region_info";
     public static final String COMPLETE_SUBWAY = "complete_subway_info";
@@ -118,15 +118,17 @@ public class App
                         if(completeRegion == null) {
                             completeRegion = new JSONObject();
                         }
+                        Thread.sleep(1000);
+                        System.out.println(href + ": currentPage=" + currentPage + ",totalPage:" + totalPage);
                         for (int i = currentPage; i <= totalPage; i++) {
-                            Thread.sleep(5000);
+                            Thread.sleep(2000);
                             String url = BASE_URL.replace("${city}", CITY[index]) + href + "pg" + i;
                             System.out.println("获取分页数据：" + url);
                             List<ListInfo> listInfos = getInfoFromList(url);
                             int finalIndex = index;
                             listInfos.forEach(listInfo -> {
                                 try {
-                                    Thread.sleep(2000);
+                                    Thread.sleep(1000);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -169,6 +171,9 @@ public class App
                         String siteName =  ((JSONObject)siteInfoList.get(areaIndenx)).getString("siteName");
                         JSONObject completeRegion = cachedInfo.getJSONObject(COMPLETE_SUBWAY);
                         int currentPage = completeRegion != null && completeRegion.containsKey(href)?(completeRegion.getInteger(href)+1):1;
+                        if(completeRegion == null) {
+                            completeRegion = new JSONObject();
+                        }
                         for (int i = currentPage; i <= totalPage; i++) {
                             Thread.sleep(5000);
                             String url = BASE_URL.replace("${city}", CITY[index]) + href + "pg" + i;
@@ -280,8 +285,9 @@ public class App
         return list;
     }
 
+    private static int retryTime = 0;
 
-    private static int getTotalPageInfo(String url) throws IOException {
+    public static int getTotalPageInfo(String url) throws IOException, InterruptedException {
             Document document = Jsoup.connect(url)
                     .userAgent("Mozilla")
                     .timeout(30000)
@@ -289,9 +295,26 @@ public class App
         String pageInfo = document.select("div.contentBottom").select("div.page-box").attr("page-data");
         try {
             JSONObject object = JSONObject.parseObject(pageInfo);
-            return object.getInteger("totalPage");
+            int num = object.getInteger("totalPage");
+            retryTime = 0;
+            return num;
         }catch (Exception e) {
             e.printStackTrace();
+            System.err.println(document.toString());
+            System.err.println(pageInfo);
+            try {
+                String value = document.select("div.leftContent").select("h2.total").select("span").text();
+                if (value.equals("0")) {
+                    return 0;
+                }
+            } finally {
+
+            }
+            Thread.sleep(10000);
+            retryTime ++;
+            if(retryTime < 10) {
+                getTotalPageInfo(url);
+            }
             return 0;
         }
 
@@ -420,8 +443,7 @@ public class App
                 "Sec-Fetch-Dest: empty\n" +
                 "Referer: https://bj.lianjia.com/ershoufang/101113209839.html\n" +
                 "Accept-Encoding: gzip, deflate, br\n" +
-                "Accept-Language: zh-CN,zh;q=0.9\n" +
-                "Cookie: SECKEY_ABVK=jGWBWeLkbji92fKuYl3SXJbSW210CsaQKLELsK/q6fQ%3D; BMAP_SECKEY=e7ccd76a71cca7384bc9d56993ddbed2e19bbff4744b85e39bb3d65be30e7613e76ae0b8689ae7f5bb14207898aef6950e69432a9314fa542a239fa64bfb5b45be849e38e97fa4477b331369f476b4a939ed5fa6b44deedc9b204633c1ebe15d8360d7266162d78703ebb381263ea08005dc57c460355a9d65b2575a4a119f1e55256c703ee51bb66bcd035b92a02c46e8e54db0521bef45bd23ce179d54bc138f5df4cafe140bc1546090da7fd147adb333965a60db0ba115d0915a3c24c847174787c72e3804625b7c97a34c96d9ae62465ba8a577cc1d373083c0c06d5264907174331374567aafbf3e51615642ec; select_city=110000; lianjia_uuid=bd630f5e-c522-4c1d-9213-9e19d7fd2d85; _smt_uid=61c28c27.42678e3d; _jzqc=1; _jzqx=1.1640139815.1640139815.1.jzqsr=google%2Ecom%2Ehk|jzqct=/.-; _jzqckmp=1; _qzjc=1; UM_distinctid=17ddff37cf4aae-05d92a7cd44589-4303066-144000-17ddff37cf5fc3; sajssdk_2015_cross_new_user=1; Hm_lvt_9152f8221cb6243a53c83b956842be8a=1640139817; _ga=GA1.2.1529588944.1640139818; _gid=GA1.2.1143408819.1640139818; sensorsdata2015jssdkcross=%7B%22distinct_id%22%3A%2217ddff37dffb43-02a075688193c6-4303066-1327104-17ddff37e00b1c%22%2C%22%24device_id%22%3A%2217ddff37dffb43-02a075688193c6-4303066-1327104-17ddff37e00b1c%22%2C%22props%22%3A%7B%22%24latest_traffic_source_type%22%3A%22%E7%9B%B4%E6%8E%A5%E6%B5%81%E9%87%8F%22%2C%22%24latest_referrer%22%3A%22%22%2C%22%24latest_referrer_host%22%3A%22%22%2C%22%24latest_search_keyword%22%3A%22%E6%9C%AA%E5%8F%96%E5%88%B0%E5%80%BC_%E7%9B%B4%E6%8E%A5%E6%89%93%E5%BC%80%22%7D%7D; lianjia_ssid=14fc42df-18ee-0564-4bc6-903fa7495069; _jzqa=1.1738435168839904500.1640139815.1640139815.1640156648.2; CNZZDATA1254525948=1709056517-1640138499-https%253A%252F%252Fwww.google.com.hk%252F%7C1640160099; CNZZDATA1255633284=970310390-1640138900-https%253A%252F%252Fwww.google.com.hk%252F%7C1640155294; srcid=eyJ0Ijoie1wiZGF0YVwiOlwiOWY2MTkzYTQyMTJlYzkxYTQyY2E0YWE4MjYwM2YyZWFmOGUwZjIyMDM3NTQwNTc4MDYxZjIwNzY5MWRmZmNlYzdjOGFkMzNlYjgwMzgyZjk5ZjM5YjhmMGE4NmEwNGMyODE1NzQ4MDE4ODc2ODkyZTRlZjAyNGFjMWI0NGM5OTZmODQ2MmEyNDRlM2NjYzRhNzlhYjNiZmRkNTE2MTVjNjFhNTRjOTA2Nzg5ODFmNjIyOGU3Y2RjNGIxNDIzYzhjNDRmNThlYzcwYTNlZjYyNTBlNGZmOTNlMWRiM2JlYjhhNDRmN2ZjYzQ0NGM3ZjhjZmQ1MGQ0M2VjZTI5OGM3NjAxNDJkMjRmYmYzOTc1NTcxODBiMDM3Zjg5ZDNiNzAxNWQyYTcwMTdkNzU2ZGM0NjdjNWNhMjY5MDVmNDIwNGQ2ZWQ1Njk5ZTUyMGQ0OTRkYTk4MGNjNmE0ODk1ZGRiMlwiLFwia2V5X2lkXCI6XCIxXCIsXCJzaWduXCI6XCIxNmRmMmEyYlwifSIsInIiOiJodHRwczovL2JqLmxpYW5qaWEuY29tL2Vyc2hvdWZhbmcvMTAxMTEzODY4NDc1Lmh0bWwiLCJvcyI6IndlYiIsInYiOiIwLjEifQ==; Hm_lpvt_9152f8221cb6243a53c83b956842be8a=1640162010; CNZZDATA1253477573=18736937-1640139188-https%253A%252F%252Fwww.google.com.hk%252F%7C1640160788; CNZZDATA1255604082=736077965-1640138639-https%253A%252F%252Fwww.google.com.hk%252F%7C1640161089; _qzja=1.1721480162.1640139815577.1640139815577.1640156648167.1640160572964.1640162011756.0.0.0.15.2; _qzjb=1.1640156648167.9.0.0.0; _qzjto=15.2.0; _jzqb=1.9.10.1640156648.1";
+                "Accept-Language: zh-CN,zh;q=0.9\n";
 
         String[] headers = header.split("\\n");
         Map<String,String> headerMap = new HashMap<>();
