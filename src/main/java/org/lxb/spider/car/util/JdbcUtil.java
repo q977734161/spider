@@ -1,6 +1,8 @@
 package org.lxb.spider.car.util;
 
-import org.lxb.spider.car.entity.ListInfo;
+import com.alibaba.fastjson.JSONObject;
+import org.lxb.spider.car.entity.CarInfo;
+import org.lxb.spider.car.entity.CarTypeDetailInfo;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -13,10 +15,14 @@ public class JdbcUtil {
 
     private static String URL = "jdbc:mysql://localhost:3306/house_info?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&useSSL=false";
     private static String USER_NAME = "root";
-    private static String PASSWD = "511e1eb8939cde61";
+    private static String PASSWD = "lxb123$%^";
     private static volatile Connection conn;
-    private static String INSERT_SQL = "INSERT INTO `house_info`.`ershoufang_info`(`type`,`regionOrLine`,`areaOrSite`,`houseCode`,`title`,`address`,`houseInfo`,`followInfo`,`tag`,`totalPrice`,`unitPrice`,`detailInfo`,`updateTime`)\n" +
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?);";
+    private static String INSERT_SQL = "INSERT INTO `house_info`.`car_info`(`city`,`brandName`,`letter`,`carName`,`carStyleInfo`,`carPrice`," +
+            "`baseInfo`,`carBodyInfo`,`engineInfo`,`gearboxInfo`,`chassisSteeringInfo`,`wheelBrakeInfo`,`activeSafetyInfo`,`passiveSafetyInfo`," +
+            "`assistOperateInfo`,`assistDriveHardWareInfo`,`outConfigInfo`,`innerConfigInfo`,`siteConfigInfo`,`internetOfVehiclesInfo`, " +
+            "`videoEntertainmentInfo`,`lightFuncInfo`,`grassRearviewMirrorInfo`,`airConditionInfo`,`optionalInfo`,`assistDriveInfo`, "+
+            "`brandId`,`dataCkid`)VALUES"+
+            "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);";
     private static Connection getConn() throws ClassNotFoundException, SQLException {
         if(conn == null) {
             synchronized (JdbcUtil.class) {
@@ -29,25 +35,40 @@ public class JdbcUtil {
         return conn;
     }
 
-    public static void insert(String type,String regionOrLine,String areaOrSite,List<ListInfo> listInfos) throws ClassNotFoundException, SQLException {
+    public static void insert(String city, CarInfo carInfo) throws ClassNotFoundException, SQLException {
 
         PreparedStatement stmt = getConn().prepareStatement(INSERT_SQL);
-        for (int i = 0; i < listInfos.size(); i++) {
-            stmt.setString(1,type);
-            stmt.setString(2,regionOrLine);
-            stmt.setString(3,areaOrSite);
-            /*stmt.setString(4,listInfos.get(i).getHouseId());
-            stmt.setString(5,listInfos.get(i).getCommunity());
-            stmt.setString(6,listInfos.get(i).getAddress());
-            stmt.setString(7,listInfos.get(i).getHouseInfo());
-            stmt.setString(8,listInfos.get(i).getFollowInfo());
-            stmt.setString(9,listInfos.get(i).getTag());
-            stmt.setString(10,listInfos.get(i).getTotalPrice());
-            stmt.setString(11,listInfos.get(i).getUnitPrice());
-            stmt.setString(12,listInfos.get(i).getDetailInfo());*/
-            stmt.setLong(13,System.currentTimeMillis());
+        for(CarTypeDetailInfo carTypeDetailInfo : carInfo.getCarTypeDetailInfos()) {
+            stmt.setString(1,city);
+            stmt.setString(2,carInfo.getBrandName());
+            stmt.setString(3,carInfo.getLetter());
+            stmt.setString(4,carTypeDetailInfo.getCarName());
+            stmt.setString(5,carTypeDetailInfo.getCarStyleInfo());
+            stmt.setString(6,carTypeDetailInfo.getCarPrice());
+            stmt.setString(7,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getBaseInfo()));
+            stmt.setString(8,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getCarBodyInfo()));
+            stmt.setString(9,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getEngineInfo()));
+            stmt.setString(10,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getGearboxInfo()));
+            stmt.setString(11,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getChassisSteeringInfo()));
+            stmt.setString(12,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getWheelBrakeInfo()));
+            stmt.setString(13,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getActiveSafetyInfo()));
+            stmt.setString(14,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getPassiveSafetyInfo()));
+            stmt.setString(15,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getAssistOperateInfo()));
+            stmt.setString(16,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getAssistDriveHardWareInfo()));
+            stmt.setString(17,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getOutConfigInfo()));
+            stmt.setString(18,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getInnerConfigInfo()));
+            stmt.setString(19,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getSeatConfigInfo()));
+            stmt.setString(20,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getInternetOfVehiclesInfo()));
+            stmt.setString(21,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getVideoEntertainmentInfo()));
+            stmt.setString(22,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getLightFuncInfo()));
+            stmt.setString(23,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getGrassRearviewMirrorInfo()));
+            stmt.setString(24,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getAirConditionInfo()));
+            stmt.setString(25,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getOptionalInfo()));
+            stmt.setString(26,JSONObject.toJSONString(carTypeDetailInfo.getCarConfigParams().getAssistDriveInfo()));
+            stmt.setString(27,carInfo.getBrandId());
+            stmt.setString(28,carTypeDetailInfo.getDataCkid());
             stmt.addBatch();
-        };
+        }
         int[] rs = stmt.executeBatch();
         stmt.close();
     }

@@ -1,182 +1,38 @@
-package org.lxb.spider.car;
+package org.lxb.spider;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.lxb.spider.car.entity.*;
-import org.lxb.spider.car.util.HttpUtil;
-import org.lxb.spider.car.util.JdbcUtil;
-import org.lxb.spider.util.WebClientCrawHtmlUtil;
+import org.junit.Test;
+import org.lxb.spider.car.entity.CarConfigParams;
+import org.lxb.spider.car.entity.CarInfo;
+import org.lxb.spider.car.entity.CarTypeDetailInfo;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Hello world!
- * getcitylist : https://car.yiche.com/web_api/web_app/api/v1/city/get_area_list
- * https://car.yiche.com/web_api/car_model_api/api/v1/car/config_new_param?cid=508&param=%7B%22cityId%22%3A%223101%22%2C%22serialId%22%3A%221796%22%7D
- */
-public class App 
-{
-    private static String[] CITY = new String[]{"bj"};
-    public static final String BRAND_INFO = "brand_info";
-    public static final String COMPLETE_INFO = "complete_info";
-    public static final String SUBWAY_INFO = "subway_info";
-    private static String BASE_URL = "https://car.yiche.com";
-    private static String XUANCHEGONGJU_URL = BASE_URL + "/xuanchegongju";
-    private static String ERSHOUFANG_URL = "https://${city}.lianjia.com/ershoufang/";
-    private static String STAT_BASE_URL = "https://${city}.lianjia.com/ershoufang/housestat";
-    public static void main(String[] args ) throws IOException, SQLException, ClassNotFoundException, InterruptedException {
-        for (int index = 0; index < CITY.length; index++) {
-            File file = new File(System.getProperty("user.dir") + File.separator + "car_cache");
-            System.out.println("cache file : " + file.getAbsolutePath());
-            if (!file.exists()) {
-                file.createNewFile();
-            }
-            FileReader fileReader = new FileReader(file);
-            char[] buffer = new char[1024];
-            StringBuffer allContent = new StringBuffer();
-            int len = fileReader.read(buffer);
-            while (len != -1) {
-                allContent.append(buffer, 0, len);
-                len = fileReader.read(buffer);
-            }
-            fileReader.close();
-            JSONObject cachedInfo;
-            if (allContent.length() != 0) {
-                cachedInfo = JSON.parseObject(allContent.toString());
-            } else {
-                cachedInfo = new JSONObject();
-            }
-            if (!cachedInfo.containsKey(BRAND_INFO) || cachedInfo.getJSONArray(BRAND_INFO).size() == 0) {
-                List<BrandInfo> regionInfos = getBrandInfo(XUANCHEGONGJU_URL);
-                cachedInfo.put(BRAND_INFO, JSONArray.parseArray(JSONObject.toJSONString(regionInfos)));
-                File fileBak = new File(System.getProperty("user.dir") + File.separator + "car_cache_bak");
-                FileWriter fileWriter = new FileWriter(fileBak);
-                fileWriter.write(cachedInfo.toJSONString());
-                fileWriter.close();
-                file.delete();
-                fileBak.renameTo(file);
-            }
-            JSONArray brandInfos = cachedInfo.getJSONArray(BRAND_INFO);
-            if(brandInfos.size() == 0) {
-                System.err.println("brand info is null");
-            } else {
-                for (int brandIndex = 0; brandIndex < brandInfos.size(); brandIndex++) {
-                    JSONObject regionInfo = (JSONObject) brandInfos.get(brandIndex);
-                    String carDetailHref = regionInfo.getString("href");
-                    String itemLetter = regionInfo.getString("itemLetter");
-                    String carName = regionInfo.getString("brandName");
-                    String brandId = regionInfo.getString("brandId");
-                    ListInfo listInfo = getListInfo(BASE_URL + carDetailHref);
-                    if(listInfo.getItem() == null || listInfo.getItem().size() == 0) {
-                        System.out.println(carName + ":" + carDetailHref);
-                        continue;
-                    }
-                    do {
-                        JSONObject completeInfo = cachedInfo.getJSONObject(COMPLETE_INFO);
-                        if(completeInfo == null) {
-                            completeInfo = new JSONObject();
-                        }
-                        for(ListInfo.Item item : listInfo.getItem()) {
-                            String url = BASE_URL + item.getPeizhiUrl();
-                            System.out.println(url);
-                            if(completeInfo.containsKey(url)) {
-                                continue;
-                            }
-                            WebClient webClient = WebClientCrawHtmlUtil.getClient();
-                            HtmlPage page = webClient.getPage(url);
-                            int executJobNums = webClient.waitForBackgroundJavaScript(100);
-                            while (executJobNums > 1) {
-                                executJobNums = webClient.waitForBackgroundJavaScript(1000);
-                                System.err.println(executJobNums);
-                            }
-                            page.cleanUp();
-                            getDetailInfoAndSave(page.asXml(),carName,itemLetter,brandId);
-                            completeInfo.put(url,"1");
-                            cachedInfo.put(COMPLETE_INFO, completeInfo);
-                            File fileBak = new File(System.getProperty("user.dir") + File.separator + "car_cache_bak");
-                            FileWriter fileWriter = new FileWriter(fileBak);
-                            fileWriter.write(cachedInfo.toJSONString());
-                            fileWriter.close();
-                            file.delete();
-                            fileBak.renameTo(file);
-
-                            Thread.sleep(1000);
-                        }
-                        listInfo = getListInfo(BASE_URL + listInfo.getNextPageUrl());
-                    } while (listInfo.hasNext() && listInfo.getItem() != null && listInfo.getItem().size() != 0);
-
-                }
-            }
-        }
-        HttpUtil.close();
-        JdbcUtil.close();
-    }
-
-    private static ListInfo getListInfo(String carDetailHref) throws IOException {
-        Document document = Jsoup.connect(carDetailHref)
-                .userAgent("Mozilla")
-                .timeout(30000)
-                .get();
-        Elements regionInfo = document.select("div.search-result-list").select("div.search-result-list-item");
-        boolean hasNext = document.select("div[id='pagination-list']").select("a[data-current='next']").hasClass("disabled");
-        String nextUrl = document.select("div[id='pagination-list']").select("a[data-current='next']").attr("href");
-        ListInfo listInfo = new ListInfo(nextUrl,!hasNext);
-        listInfo.setItem(new ArrayList<>());
-        regionInfo.forEach(element -> {
-            String dataId = element.attr("data-id");
-            String name = element.select("a[target='_blank']").select("p.cx-name").text();
-            String price = element.select("a[target='_blank']").select("p.cx-price").text();
-            String peizhiDetailHref = element.select("p.cx-params").select("a.cx-params-font").attr("href");
-            ListInfo.Item item = new ListInfo.Item(dataId,name,price,peizhiDetailHref);
-            listInfo.addItem(item);
-        });
-        return listInfo;
-    }
-
-    private static  List<BrandInfo> getBrandInfo(String url) throws IOException {
-        Document document = Jsoup.connect(url)
-                .userAgent("Mozilla")
-                .timeout(30000)
-                .get();
-        Elements brandInfo = document.select("div.brand-list > div");
-        List<BrandInfo> list = new ArrayList<>();
-        if(brandInfo.size() > 1) {
-            brandInfo.forEach(element -> {
-                String itemLetter = element.attr("data-index");
-                element.select("div.item-brand").forEach(childElement -> {
-                    String brandId = childElement.attr("data-id");
-                    String brandName = childElement.attr("data-name");
-                    String href = childElement.select("a").attr("href");
-                    BrandInfo brandInfoEntity = new BrandInfo(itemLetter,brandId,brandName,href);
-                    list.add(brandInfoEntity);
-                });
-            });
-        }
-        return list;
-    }
-
-    private static void getDetailInfoAndSave(String html,String brandName,String letter,String brandId) throws SQLException, ClassNotFoundException {
+public class CarTest {
+    @Test
+    public void test() throws IOException, SQLException, ClassNotFoundException {
+        String path = "D:\\lixiaobao14\\Desktop\\test.html";
+        List<String> allContentList = Files.readAllLines(Paths.get(path));
         CarInfo carInfo = new CarInfo();
-        carInfo.setBrandName(brandName);
-        carInfo.setLetter(letter);
-        carInfo.setBrandId(brandId);
+        carInfo.setBrandName("奥迪");
+        carInfo.setLetter("A");
         carInfo.setCarTypeDetailInfos(new ArrayList<>());
-        Document document = Jsoup.parse(html);
+        StringBuffer sb = new StringBuffer();
+        for(String content : allContentList) {
+            sb.append(content);
+        }
+        Document document = Jsoup.parse(sb.toString());
         Elements elements = document.select("ul.nav-box").select("li");
         Elements tdElements = document.select("div.main-table-box").select("table.main-param-table").select("tr.t-header").select("td");
         final int[] index = {0};
@@ -188,13 +44,12 @@ public class App
             String carName = tdElem.select("em.car-name").text();
             String carStyleInfo = tdElem.select("span.car-style-info").text();
             String carPrice = tdElem.select("div.car-price").text();
-            String dataCkid = tdElem.select("div.change-car-btn").attr("data-ckid");
+            System.out.println(carName + ":" + carStyleInfo + ":" + carPrice);
             CarTypeDetailInfo carTypeDetailInfo = new CarTypeDetailInfo();
             carTypeDetailInfo.setIndex(index[0]);
             carTypeDetailInfo.setCarName(carName);
             carTypeDetailInfo.setCarPrice(carPrice);
             carTypeDetailInfo.setCarStyleInfo(carStyleInfo);
-            carTypeDetailInfo.setDataCkid(dataCkid);
             carTypeDetailInfo.setCarConfigParams(new CarConfigParams());
             carInfo.getCarTypeDetailInfos().add(carTypeDetailInfo);
             index[0]++;
@@ -245,9 +100,6 @@ public class App
                         }
                         if(hasNoCloneClass.get()) {
                             noCloneClassTrContent.set(getContent(content));
-                            return;
-                        }
-                        if(ele.select("div").size() == 0 || !ele.select("div").hasClass("div-in-td-content")) {
                             return;
                         }
                         switch (txt) {
@@ -385,18 +237,20 @@ public class App
                     hasNoCloneClass.set(false);
                 }
                 nextTrElement = nextTrElement.nextElementSibling();
+                if(nextTrElement == null) {
+                    System.out.println(nextTrElement);
+                }
             }
         });
 
-        JdbcUtil.insert("bj",carInfo);
+        //JdbcUtil.insert("bj",carInfo);
         System.out.println(JSONObject.toJSONString(carInfo));
     }
 
-    private static String getContent(StringBuffer stringBuffer) {
+    private String getContent(StringBuffer stringBuffer) {
         if(stringBuffer.charAt(stringBuffer.length() -1) == '&') {
             return stringBuffer.substring(0,stringBuffer.length()-1);
         }
         return stringBuffer.toString();
     }
-
 }

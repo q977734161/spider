@@ -32,3 +32,41 @@ ADD PRIMARY KEY (`id`);
 ;
 
 update ershoufang_info set `date` = DATE_FORMAT(from_unixtime(updateTime/1000),"%Y-%m-%d"), month = DATE_FORMAT(from_unixtime(updateTime/1000),"%Y-%m")
+
+CREATE TABLE `house_info`.`car_info` (
+  `Id` INT NOT NULL AUTO_INCREMENT,
+  `city` VARCHAR(45) NULL,
+  `brandName` VARCHAR(45) NULL COMMENT '品牌名字',
+  `letter` VARCHAR(1) NULL COMMENT '手写字母',
+  `carName` VARCHAR(45) NULL COMMENT '车名字',
+  `carStyleInfo` VARCHAR(45) NULL COMMENT '车具体配置名称',
+  `carPrice` VARCHAR(45) NULL COMMENT '价格',
+  `baseInfo` TEXT NULL COMMENT '基本信息',
+  `carBodyInfo` TEXT NULL COMMENT '车身',
+  `engineInfo` TEXT NULL COMMENT '发动机',
+  `gearboxInfo` TEXT NULL COMMENT '变速箱',
+  `chassisSteeringInfo` TEXT NULL COMMENT '底盘转向',
+  `wheelBrakeInfo` TEXT NULL COMMENT ' 车轮制动',
+  `activeSafetyInfo` TEXT NULL COMMENT '主动安全',
+  `passiveSafetyInfo` TEXT NULL COMMENT '被动安全',
+  `assistOperateInfo` TEXT NULL COMMENT '辅助/操控配置',
+  `assistDriveHardWareInfo` TEXT NULL COMMENT '辅助驾驶硬件',
+  `outConfigInfo` TEXT NULL COMMENT '外部配置',
+  `innerConfigInfo` TEXT NULL COMMENT '内部配置',
+  `siteConfigInfo` TEXT NULL COMMENT '座椅配置',
+  `internetOfVehiclesInfo` TEXT NULL COMMENT '车机/互联',
+  `videoEntertainmentInfo` TEXT NULL COMMENT '影音娱乐',
+  `lightFuncInfo` TEXT NULL COMMENT '灯光功能',
+  `grassRearviewMirrorInfo` TEXT NULL COMMENT '玻璃/后视镜',
+  `airConditionInfo` TEXT NULL COMMENT '空调/制冷',
+    `optionalInfo` TEXT NULL COMMENT '选配包',
+  PRIMARY KEY (`Id`));
+
+  ALTER TABLE `house_info`.`car_info`
+  ADD COLUMN `assistDriveInfo` TEXT NULL COMMENT '辅助驾驶' AFTER `optionalInfo`;
+
+ALTER TABLE `house_info`.`car_info`
+ADD COLUMN `dataCkid` VARCHAR(20) NULL DEFAULT NULL AFTER `assistDriveInfo`,
+ADD COLUMN `brandId` VARCHAR(10) NULL DEFAULT NULL AFTER `dataCkid`;
+ALTER TABLE `house_info`.`car_info`
+CHANGE COLUMN `carStyleInfo` `carStyleInfo` VARCHAR(100) NULL DEFAULT NULL COMMENT '车具体配置名称' ;
