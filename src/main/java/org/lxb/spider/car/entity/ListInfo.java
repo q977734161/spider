@@ -6,7 +6,6 @@ import java.util.List;
 public class ListInfo {
 
     private String nextPageUrl;
-    private boolean hasNext = false;
     private List<Item> item;
 
 
@@ -72,9 +71,8 @@ public class ListInfo {
     public ListInfo() {
     }
 
-    public ListInfo(String nextPageUrl, boolean hasNext) {
+    public ListInfo(String nextPageUrl) {
         this.nextPageUrl = nextPageUrl;
-        this.hasNext = hasNext;
     }
 
     public String getNextPageUrl() {
@@ -83,14 +81,6 @@ public class ListInfo {
 
     public void setNextPageUrl(String nextPageUrl) {
         this.nextPageUrl = nextPageUrl;
-    }
-
-    public boolean hasNext() {
-        return hasNext;
-    }
-
-    public void setHasNext(boolean hasNext) {
-        this.hasNext = hasNext;
     }
 
     public List<Item> getItem() {
@@ -112,7 +102,6 @@ public class ListInfo {
     public String toString() {
         return "ListInfo{" +
                 "nextPageUrl='" + nextPageUrl + '\'' +
-                ", hasNext=" + hasNext +
                 ", item=" + item +
                 '}';
     }

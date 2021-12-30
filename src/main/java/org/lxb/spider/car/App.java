@@ -34,11 +34,8 @@ public class App
     private static String[] CITY = new String[]{"bj"};
     public static final String BRAND_INFO = "brand_info";
     public static final String COMPLETE_INFO = "complete_info";
-    public static final String SUBWAY_INFO = "subway_info";
     private static String BASE_URL = "https://car.yiche.com";
     private static String XUANCHEGONGJU_URL = BASE_URL + "/xuanchegongju";
-    private static String ERSHOUFANG_URL = "https://${city}.lianjia.com/ershoufang/";
-    private static String STAT_BASE_URL = "https://${city}.lianjia.com/ershoufang/housestat";
     public static void main(String[] args ) throws IOException, SQLException, ClassNotFoundException, InterruptedException {
         for (int index = 0; index < CITY.length; index++) {
             File file = new File(System.getProperty("user.dir") + File.separator + "car_cache");
@@ -82,18 +79,21 @@ public class App
                     String carName = regionInfo.getString("brandName");
                     String brandId = regionInfo.getString("brandId");
                     ListInfo listInfo = getListInfo(BASE_URL + carDetailHref);
+                    int count = 0;
                     if(listInfo.getItem() == null || listInfo.getItem().size() == 0) {
                         System.out.println(carName + ":" + carDetailHref);
                         continue;
                     }
                     do {
+
                         JSONObject completeInfo = cachedInfo.getJSONObject(COMPLETE_INFO);
                         if(completeInfo == null) {
                             completeInfo = new JSONObject();
                         }
                         for(ListInfo.Item item : listInfo.getItem()) {
+                            count ++;
                             String url = BASE_URL + item.getPeizhiUrl();
-                            System.out.println(url);
+                            System.out.println(count + ":" + item.getBrandName() + ":" + url);
                             if(completeInfo.containsKey(url)) {
                                 continue;
                             }
@@ -102,7 +102,7 @@ public class App
                             int executJobNums = webClient.waitForBackgroundJavaScript(100);
                             while (executJobNums > 1) {
                                 executJobNums = webClient.waitForBackgroundJavaScript(1000);
-                                System.err.println(executJobNums);
+                                System.err.println("running js job :" + executJobNums);
                             }
                             page.cleanUp();
                             getDetailInfoAndSave(page.asXml(),carName,itemLetter,brandId);
@@ -118,7 +118,7 @@ public class App
                             Thread.sleep(1000);
                         }
                         listInfo = getListInfo(BASE_URL + listInfo.getNextPageUrl());
-                    } while (listInfo.hasNext() && listInfo.getItem() != null && listInfo.getItem().size() != 0);
+                    } while (listInfo.getItem() != null && listInfo.getItem().size() != 0);
 
                 }
             }
@@ -133,9 +133,8 @@ public class App
                 .timeout(30000)
                 .get();
         Elements regionInfo = document.select("div.search-result-list").select("div.search-result-list-item");
-        boolean hasNext = document.select("div[id='pagination-list']").select("a[data-current='next']").hasClass("disabled");
         String nextUrl = document.select("div[id='pagination-list']").select("a[data-current='next']").attr("href");
-        ListInfo listInfo = new ListInfo(nextUrl,!hasNext);
+        ListInfo listInfo = new ListInfo(nextUrl);
         listInfo.setItem(new ArrayList<>());
         regionInfo.forEach(element -> {
             String dataId = element.attr("data-id");
@@ -395,7 +394,7 @@ public class App
         });
 
         JdbcUtil.insert("bj",carInfo);
-        System.out.println(JSONObject.toJSONString(carInfo));
+        //System.out.println(JSONObject.toJSONString(carInfo));
     }
 
     private static String getContent(StringBuffer stringBuffer) {

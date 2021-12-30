@@ -5,9 +5,7 @@ import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.SilentCssErrorHandler;
 import com.gargoylesoftware.htmlunit.WebClient;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.util.logging.Level;
 
 public class WebClientCrawHtmlUtil {
 
@@ -17,6 +15,8 @@ public class WebClientCrawHtmlUtil {
         if(webClient == null) {
             synchronized (WebClientCrawHtmlUtil.class) {
                 if(webClient == null) {
+                    java.util.logging.Logger.getLogger("com.gargoylesoftware").setLevel(Level.OFF);
+                    java.util.logging.Logger.getLogger("org.apache.http.client").setLevel(Level.OFF);
                     webClient = new WebClient(BrowserVersion.CHROME);
                     webClient.setAjaxController(new NicelyResynchronizingAjaxController());
                     //支持js
@@ -34,6 +34,7 @@ public class WebClientCrawHtmlUtil {
                     //允许cookie
                     webClient.getCookieManager().setCookiesEnabled(true);
                     webClient.setJavaScriptTimeout(30 * 1000);
+
                 }
             }
         }

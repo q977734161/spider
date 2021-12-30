@@ -70,6 +70,38 @@ public class JdbcUtil {
             stmt.setLong(29,System.currentTimeMillis());
             stmt.addBatch();
         }
+        if(carInfo.getCarTypeDetailInfos().size() == 0 ) {
+            stmt.setString(1,city);
+            stmt.setString(2,carInfo.getBrandName());
+            stmt.setString(3,carInfo.getLetter());
+            stmt.setString(4,"");
+            stmt.setString(5,"");
+            stmt.setString(6,"");
+            stmt.setString(7,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(8,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(9,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(10,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(11,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(12,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(13,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(14,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(15,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(16,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(17,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(18,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(19,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(20,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(21,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(22,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(23,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(24,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(25,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(26,JSONObject.toJSONString(new JSONObject()));
+            stmt.setString(27,carInfo.getBrandId());
+            stmt.setString(28,"");
+            stmt.setLong(29,System.currentTimeMillis());
+            stmt.addBatch();
+        }
         int[] rs = stmt.executeBatch();
         stmt.close();
     }
